@@ -4,6 +4,7 @@ import 'util/platform_io_stub.dart'
     if (dart.library.io) 'util/platform_io_real.dart';
 
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 
 import 'package:posthog_flutter/src/surveys/survey_service.dart';
 import 'package:posthog_flutter/src/util/logging.dart';
@@ -19,6 +20,11 @@ import 'posthog_flutter_platform_interface.dart';
 class PosthogFlutterIO extends PosthogFlutterPlatformInterface {
   PosthogFlutterIO() {
     _methodChannel.setMethodCallHandler(_handleMethodCall);
+  }
+
+  @visibleForTesting
+  Future<dynamic> handleMethodCallForTest(MethodCall call) {
+    return _handleMethodCall(call);
   }
 
   /// The method channel used to interact with the native platform.
@@ -175,14 +181,36 @@ class PosthogFlutterIO extends PosthogFlutterPlatformInterface {
   Future<void> capture({
     required String eventName,
     Map<String, Object>? properties,
+    Map<String, Object>? groups,
   }) async {
     if (!isSupportedPlatform()) {
       return;
     }
 
     try {
-      final normalizedProperties =
-          properties != null ? PropertyNormalizer.normalize(properties) : null;
+      Map<String, Object>? mergedProperties =
+          properties == null ? null : {...properties};
+
+      if (groups != null && groups.isNotEmpty) {
+        mergedProperties ??= <String, Object>{};
+        final existingGroups = mergedProperties['\$groups'];
+        if (existingGroups is Map) {
+          mergedProperties['\$groups'] = {
+            ...Map<String, Object>.from(
+              existingGroups.map(
+                (key, value) => MapEntry(key.toString(), value as Object),
+              ),
+            ),
+            ...groups,
+          };
+        } else {
+          mergedProperties['\$groups'] = groups;
+        }
+      }
+
+      final normalizedProperties = mergedProperties != null
+          ? PropertyNormalizer.normalize(mergedProperties)
+          : null;
 
       await _methodChannel.invokeMethod('capture', {
         'eventName': eventName,

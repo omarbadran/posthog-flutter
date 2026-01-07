@@ -31,5 +31,63 @@ void main() {
       expect(fakePlatformInterface.registeredOnFeatureFlagsCallback,
           equals(testCallback));
     });
+
+    test('capture supports event-level groups via \$groups', () async {
+      await Posthog().capture(
+        eventName: 'thing_happened',
+        groups: {
+          'company': 'c_123',
+          'project': 42,
+        },
+      );
+
+      expect(fakePlatformInterface.capturedEvents, hasLength(1));
+      final call = fakePlatformInterface.capturedEvents.single;
+      expect(call.eventName, equals('thing_happened'));
+
+      final properties = call.properties;
+      expect(properties, isNotNull);
+      expect(properties!.containsKey('\$groups'), isTrue);
+      expect(properties['\$groups'], equals({'company': 'c_123', 'project': 42}));
+    });
+
+    test('capture merges existing \$groups with groups parameter', () async {
+      await Posthog().capture(
+        eventName: 'merged_groups',
+        properties: {
+          '\$groups': {
+            'company': 'c_old',
+            'team': 't_1',
+          },
+        },
+        groups: {
+          'company': 'c_new',
+          'project': 'p_9',
+        },
+      );
+
+      final properties = fakePlatformInterface.capturedEvents.single.properties!;
+      expect(
+        properties['\$groups'],
+        equals({
+          'company': 'c_new',
+          'team': 't_1',
+          'project': 'p_9',
+        }),
+      );
+    });
+
+    test('capture adds \$screen_name when groups provided', () async {
+      await Posthog().screen(screenName: 'Checkout');
+
+      await Posthog().capture(
+        eventName: 'purchase_clicked',
+        groups: {'project': 'p1'},
+      );
+
+      final properties = fakePlatformInterface.capturedEvents.last.properties!;
+      expect(properties['\$screen_name'], equals('Checkout'));
+      expect(properties['\$groups'], equals({'project': 'p1'}));
+    });
   });
 }
