@@ -188,33 +188,21 @@ class PosthogFlutterIO extends PosthogFlutterPlatformInterface {
     }
 
     try {
-      Map<String, Object>? mergedProperties =
-          properties == null ? null : {...properties};
+      final normalizedProperties =
+          properties != null ? PropertyNormalizer.normalize(properties) : null;
 
+      // Convert groups to Map<String, String> for native SDK compatibility
+      Map<String, String>? normalizedGroups;
       if (groups != null && groups.isNotEmpty) {
-        mergedProperties ??= <String, Object>{};
-        final existingGroups = mergedProperties['\$groups'];
-        if (existingGroups is Map) {
-          mergedProperties['\$groups'] = {
-            ...Map<String, Object>.from(
-              existingGroups.map(
-                (key, value) => MapEntry(key.toString(), value as Object),
-              ),
-            ),
-            ...groups,
-          };
-        } else {
-          mergedProperties['\$groups'] = groups;
-        }
+        normalizedGroups = groups.map(
+          (key, value) => MapEntry(key, value.toString()),
+        );
       }
-
-      final normalizedProperties = mergedProperties != null
-          ? PropertyNormalizer.normalize(mergedProperties)
-          : null;
 
       await _methodChannel.invokeMethod('capture', {
         'eventName': eventName,
         if (normalizedProperties != null) 'properties': normalizedProperties,
+        if (normalizedGroups != null) 'groups': normalizedGroups,
       });
     } on PlatformException catch (exception) {
       printIfDebug('Exeption on capture: $exception');

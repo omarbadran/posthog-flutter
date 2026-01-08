@@ -133,6 +133,44 @@ class InitialScreenState extends State<InitialScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        _posthogFlutterPlugin.capture(
+                          eventName: "event_with_groups",
+                          properties: {
+                            "foo": "bar",
+                            "supplier_id": "sup_test_1",
+                          },
+                          groups: {
+                            "supplier": "sup_test_1",
+                          },
+                        );
+                      },
+                      child: const Text("Capture Event (groups)"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        _posthogFlutterPlugin.capture(
+                          eventName: r"$groupidentify",
+                          properties: {
+                            r"$group_type": "supplier",
+                            r"$group_key": "sup_test_1",
+                            r"$group_set": {
+                              "supplier_name": "Test Supplier",
+                              "supplier_min_order_value": 100,
+                              "supplier_min_items_per_order": 5,
+                            },
+                          },
+                        );
+                      },
+                      child: const Text("Group Identify (supplier)"),
+                    ),
+                  ],
+                ),
                 const Divider(),
                 const Padding(
                   padding: EdgeInsets.all(8.0),

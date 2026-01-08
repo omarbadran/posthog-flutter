@@ -45,20 +45,17 @@ void main() {
       final call = fakePlatformInterface.capturedEvents.single;
       expect(call.eventName, equals('thing_happened'));
 
-      final properties = call.properties;
-      expect(properties, isNotNull);
-      expect(properties!.containsKey('\$groups'), isTrue);
-      expect(properties['\$groups'], equals({'company': 'c_123', 'project': 42}));
+      // groups are now passed as a separate parameter (not embedded in properties)
+      final groups = call.groups;
+      expect(groups, isNotNull);
+      expect(groups, equals({'company': 'c_123', 'project': 42}));
     });
 
-    test('capture merges existing \$groups with groups parameter', () async {
+    test('capture passes groups separately from properties', () async {
       await Posthog().capture(
         eventName: 'merged_groups',
         properties: {
-          '\$groups': {
-            'company': 'c_old',
-            'team': 't_1',
-          },
+          'some_prop': 'value',
         },
         groups: {
           'company': 'c_new',
@@ -66,15 +63,11 @@ void main() {
         },
       );
 
-      final properties = fakePlatformInterface.capturedEvents.single.properties!;
-      expect(
-        properties['\$groups'],
-        equals({
-          'company': 'c_new',
-          'team': 't_1',
-          'project': 'p_9',
-        }),
-      );
+      final call = fakePlatformInterface.capturedEvents.single;
+      // properties should not contain $groups anymore
+      expect(call.properties?['some_prop'], equals('value'));
+      // groups passed separately
+      expect(call.groups, equals({'company': 'c_new', 'project': 'p_9'}));
     });
 
     test('capture adds \$screen_name when groups provided', () async {
@@ -85,9 +78,9 @@ void main() {
         groups: {'project': 'p1'},
       );
 
-      final properties = fakePlatformInterface.capturedEvents.last.properties!;
-      expect(properties['\$screen_name'], equals('Checkout'));
-      expect(properties['\$groups'], equals({'project': 'p1'}));
+      final call = fakePlatformInterface.capturedEvents.last;
+      expect(call.properties?['\$screen_name'], equals('Checkout'));
+      expect(call.groups, equals({'project': 'p1'}));
     });
   });
 }

@@ -88,51 +88,29 @@ class Posthog {
     /// This associates *only this event* with the provided groups, without
     /// persisting the group mapping for future events (unlike `group()`).
     ///
-    /// Under the hood, this sets the `$groups` event property.
+    /// On iOS/Android, this is passed to the native SDK's `groups` parameter
+    /// which properly merges with any sticky groups set via `group()`.
     Map<String, Object>? groups,
   }) {
     final propertiesCopy = properties == null ? null : {...properties};
 
     final currentScreen = _currentScreen;
-    if (propertiesCopy != null &&
-        !propertiesCopy.containsKey('\$screen_name') &&
-        currentScreen != null) {
-      propertiesCopy['\$screen_name'] = currentScreen;
-    }
-
-    // Attach non-persistent, event-level groups.
-    // If caller already provided `$groups` in properties, merge them.
-    if (groups != null && groups.isNotEmpty) {
-      final mergedProperties = propertiesCopy ?? <String, Object>{};
-
-      if (!mergedProperties.containsKey('\$screen_name') && currentScreen != null) {
-        mergedProperties['\$screen_name'] = currentScreen;
+    if (currentScreen != null) {
+      final props = propertiesCopy ?? <String, Object>{};
+      if (!props.containsKey('\$screen_name')) {
+        props['\$screen_name'] = currentScreen;
       }
-
-      final existingGroups = mergedProperties['\$groups'];
-
-      if (existingGroups is Map) {
-        final existingGroupsTyped = <String, Object>{};
-        for (final entry in existingGroups.entries) {
-          existingGroupsTyped[entry.key.toString()] = entry.value as Object;
-        }
-        mergedProperties['\$groups'] = {
-          ...existingGroupsTyped,
-          ...groups,
-        };
-      } else {
-        mergedProperties['\$groups'] = groups;
-      }
-
       return _posthog.capture(
         eventName: eventName,
-        properties: mergedProperties,
+        properties: props,
+        groups: groups,
       );
     }
 
     return _posthog.capture(
       eventName: eventName,
       properties: propertiesCopy,
+      groups: groups,
     );
   }
 
