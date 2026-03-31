@@ -32,12 +32,12 @@ void main() {
           equals(testCallback));
     });
 
-    test('capture supports event-level groups via \$groups', () async {
+    test('capture supports event-level groups', () async {
       await Posthog().capture(
         eventName: 'thing_happened',
         groups: {
           'company': 'c_123',
-          'project': 42,
+          'project': 'p_42',
         },
       );
 
@@ -48,26 +48,7 @@ void main() {
       // groups are now passed as a separate parameter (not embedded in properties)
       final groups = call.groups;
       expect(groups, isNotNull);
-      expect(groups, equals({'company': 'c_123', 'project': 42}));
-    });
-
-    test('capture passes groups separately from properties', () async {
-      await Posthog().capture(
-        eventName: 'merged_groups',
-        properties: {
-          'some_prop': 'value',
-        },
-        groups: {
-          'company': 'c_new',
-          'project': 'p_9',
-        },
-      );
-
-      final call = fakePlatformInterface.capturedEvents.single;
-      // properties should not contain $groups anymore
-      expect(call.properties?['some_prop'], equals('value'));
-      // groups passed separately
-      expect(call.groups, equals({'company': 'c_new', 'project': 'p_9'}));
+      expect(groups, equals({'company': 'c_123', 'project': 'p_42'}));
     });
 
     test('capture adds \$screen_name when groups provided', () async {

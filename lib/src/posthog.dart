@@ -90,21 +90,14 @@ class Posthog {
     ///
     /// On iOS/Android, this is passed to the native SDK's `groups` parameter
     /// which properly merges with any sticky groups set via `group()`.
-    Map<String, Object>? groups,
+    Map<String, String>? groups,
   }) {
     final propertiesCopy = properties == null ? null : {...properties};
 
     final currentScreen = _currentScreen;
-    if (currentScreen != null) {
+    if (currentScreen != null && !propertiesCopy.containsKey('\$screen_name')) {
       final props = propertiesCopy ?? <String, Object>{};
-      if (!props.containsKey('\$screen_name')) {
-        props['\$screen_name'] = currentScreen;
-      }
-      return _posthog.capture(
-        eventName: eventName,
-        properties: props,
-        groups: groups,
-      );
+      props['\$screen_name'] = currentScreen;
     }
 
     return _posthog.capture(
