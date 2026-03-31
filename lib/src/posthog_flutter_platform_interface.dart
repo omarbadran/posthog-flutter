@@ -44,7 +44,7 @@ abstract class PosthogFlutterPlatformInterface extends PlatformInterface {
   Future<void> capture({
     required String eventName,
     Map<String, Object>? properties,
-    Map<String, Object>? groups,
+    Map<String, String>? groups,
   }) {
     throw UnimplementedError('capture() has not been implemented.');
   }

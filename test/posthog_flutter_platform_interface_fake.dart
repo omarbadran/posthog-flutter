@@ -18,7 +18,7 @@ class CapturedExceptionCall {
 class CapturedEventCall {
   final String eventName;
   final Map<String, Object>? properties;
-  final Map<String, Object>? groups;
+  final Map<String, String>? groups;
 
   CapturedEventCall({
     required this.eventName,
@@ -67,7 +67,7 @@ class PosthogFlutterPlatformFake extends PosthogFlutterPlatformInterface {
   Future<void> capture({
     required String eventName,
     Map<String, Object>? properties,
-    Map<String, Object>? groups,
+    Map<String, String>? groups,
   }) async {
     capturedEvents.add(CapturedEventCall(
       eventName: eventName,
